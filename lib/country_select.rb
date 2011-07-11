@@ -6,16 +6,19 @@ module ActionView
       def country_select(object, method, priority_countries = nil, options = {}, html_options = {})
         InstanceTag.new(object, method, self, options.delete(:object)).to_country_select_tag(priority_countries, options, html_options)
       end
+
       # Returns a string of option tags for pretty much any country in the world. Supply a country name as +selected+ to
       # have it marked as the selected option tag. You can also supply an array of countries as +priority_countries+, so
       # that they will be listed above the rest of the (long) list.
       #
       # NOTE: Only the option tags are returned, you have to wrap this call in a regular HTML select tag.
+      #
+      # When you want to sort countries sensitive to umlauts, add rules as described in http://api.rubyonrails.org/classes/ActiveSupport/Inflector.html#method-i-transliterate
       def country_options_for_select(selected = nil, priority_countries = nil)
         country_options = ""
 
         if priority_countries
-          country_options += options_for_select(priority_countries, selected)
+          country_options += options_for_select(priority_countries.map {|c| [I18n.transliterate(I18n.t("countries.#{c}")), c]}.sort, selected)
           country_options += "<option value=\"\" disabled=\"disabled\">-------------</option>\n"
           # prevents selected from being included twice in the HTML which causes
           # some browsers to select the second selected option (not priority)
@@ -23,8 +26,9 @@ module ActionView
           selected=nil if priority_countries.include?(selected)
         end
 
-        return country_options + options_for_select(COUNTRIES, selected)
+        return country_options + options_for_select(COUNTRIES.map {|c| [I18n.transliterate(I18n.t("countries.#{c.parameterize.underscore}")), c.parameterize.underscore]}.sort, selected)
       end
+      
       # All the countries included in the country_options output.
       COUNTRIES = ["Afghanistan", "Aland Islands", "Albania", "Algeria", "American Samoa", "Andorra", "Angola",
         "Anguilla", "Antarctica", "Antigua And Barbuda", "Argentina", "Armenia", "Aruba", "Australia", "Austria",
